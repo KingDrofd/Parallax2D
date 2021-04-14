@@ -5,6 +5,7 @@ using System;
 [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
 public class Range : PropertyAttribute
 {
+    
     public readonly int min;
     public readonly int max;
     public readonly int step;
