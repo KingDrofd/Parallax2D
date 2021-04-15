@@ -1,5 +1,4 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -12,9 +11,7 @@ public class Parallax : MonoBehaviour
         
        [HideInInspector] public Vector3 startPos;
        [HideInInspector] public Vector3 itemSize;
-        public float speed;
-
-        
+       [HideInInspector] public float speed;        
        [HideInInspector] public SpriteRenderer spriteRenderer;
         #region       alternations
 
@@ -33,25 +30,18 @@ public class Parallax : MonoBehaviour
     [System.Serializable]
     public class ParallaxCam
     {
+        public Texture2D texture;
+        public Sprite sprite;
         public Transform camera;
         public Vector3 lastCamPos;
-        public float parallaxEffectMultiplier = 0f;
-
+        public Vector2 parallaxEffectMultiplier;
+        public bool horizontal, vertical;
+        public float itemSizeX;
+        public float itemSizeY;
+        public float posX;
+        public float posY;
     }
 
-
-    void InitNoCamVars()
-    {
-        Debug.LogWarning("init");
-        spriteParallax.spriteRenderer = GetComponent<SpriteRenderer>();
-        spriteParallax.startPos = spriteParallax.spriteRenderer.transform.position;
-        spriteParallax.itemSize = spriteParallax.spriteRenderer.bounds.size;
-    }
-
-     
-    
-    
-    
 
     public enum ParallaxType
     {
@@ -59,15 +49,17 @@ public class Parallax : MonoBehaviour
     }
     
     
-    public enum Type
+    public enum Direction
     {
-        Left, Down
+        Left, Down, Up, Right
     }
 
    public ParallaxType parallaxDropDown;
-   [HideInInspector] public Type type;
+   [HideInInspector] public Direction type;
    [HideInInspector] public SpriteParallax spriteParallax;
    [HideInInspector] public ParallaxCam parallaxCam; 
+    
+
 
 
 
@@ -78,6 +70,8 @@ public class Parallax : MonoBehaviour
         CheckChildren();
         
         InitNoCamVars();
+
+        InitCamVars();
         //parallaxCam.camera = Camera.main.transform;
         //parallaxCam.lastCamPos = parallaxCam.camera.position;
 
@@ -101,9 +95,36 @@ public class Parallax : MonoBehaviour
            " Alternation");
        }
     }
-    
+
     #endregion
-    private void ParallaxMoveX()
+
+
+    #region Methods
+
+
+
+    void InitCamVars()
+    {
+        parallaxCam.camera = Camera.main.transform;
+        parallaxCam.lastCamPos = parallaxCam.camera.position;
+        parallaxCam.sprite = GetComponent<SpriteRenderer>().sprite;
+        parallaxCam.texture = parallaxCam.sprite.texture;
+        parallaxCam.itemSizeX = parallaxCam.texture.width / parallaxCam.sprite.pixelsPerUnit;
+        parallaxCam.itemSizeY = parallaxCam.texture.height / parallaxCam.sprite.pixelsPerUnit;
+        parallaxCam.posX = parallaxCam.camera.position.x;
+        parallaxCam.posY = parallaxCam.camera.position.y;
+    }
+    
+    void InitNoCamVars()
+    {
+        Debug.LogWarning("init");
+        spriteParallax.spriteRenderer = GetComponent<SpriteRenderer>();
+        spriteParallax.startPos = spriteParallax.spriteRenderer.transform.position;
+        spriteParallax.itemSize = spriteParallax.spriteRenderer.bounds.size;
+    }
+
+
+    private void ParallaxMoveX() //Move the parallax to the left
     {   
         if (spriteParallax.alternate == true)
         {
@@ -116,7 +137,21 @@ public class Parallax : MonoBehaviour
             transform.position = spriteParallax.startPos + Vector3.left * newPos;
         }
     }
-    private void ParallaxMoveY()
+    private void XParallaxMove() //Move the parallax to the right
+    {
+        if (spriteParallax.alternate == true)
+        {
+            float newPos = Mathf.Repeat(Time.time * spriteParallax.speed, spriteParallax.itemSize.x * spriteParallax.alternation);
+            transform.position = spriteParallax.startPos + Vector3.right * newPos;
+
+        }
+        else
+        {
+            float newPos = Mathf.Repeat(Time.time * spriteParallax.speed, spriteParallax.itemSize.x);
+            transform.position = spriteParallax.startPos + Vector3.right * newPos;
+        }
+    }
+    private void ParallaxMoveY()//Move the parallax Down
     {       
         if (spriteParallax.alternate == true)
         {
@@ -128,43 +163,76 @@ public class Parallax : MonoBehaviour
             transform.position = spriteParallax.startPos + Vector3.down * newPos;
         }
     }
+    private void YParallaxMove() //Move the Parallax Up
+    {
+        if (spriteParallax.alternate == true)
+        {
+            float newPos = Mathf.Repeat(Time.time * spriteParallax.speed, spriteParallax.itemSize.y * spriteParallax.alternation);
+            transform.position = spriteParallax.startPos + Vector3.up * newPos;
+        }
+        else
+        {
+            float newPos = Mathf.Repeat(Time.time * spriteParallax.speed, spriteParallax.itemSize.y);
+            transform.position = spriteParallax.startPos + Vector3.up * newPos;
+        }
+    }
 
     void MoveParallax()
     {
-        Vector3 deltaMovement = parallaxCam.camera.transform.position;
-
-        transform.position += deltaMovement * parallaxCam.parallaxEffectMultiplier;
-        parallaxCam.lastCamPos = parallaxCam.camera.position;
+        Vector3 deltaMovement = parallaxCam.camera.position - parallaxCam.lastCamPos;
+        transform.position -= new Vector3(deltaMovement.x * parallaxCam.parallaxEffectMultiplier.x, deltaMovement.y * parallaxCam.parallaxEffectMultiplier.y);
+        if(parallaxCam.horizontal)
+        {
+            if (Mathf.Abs(parallaxCam.posX - transform.position.x) >= parallaxCam.itemSizeX)
+            {
+                float offsetPositionX = (parallaxCam.posX - transform.position.x) % parallaxCam.itemSizeX;
+                transform.position = new Vector3(parallaxCam.posX + offsetPositionX, transform.position.y, 0);
+            }
+        }
+        if(parallaxCam.vertical)
+        {
+            if(Mathf.Abs(parallaxCam.posY - transform.position.y) >= parallaxCam.itemSizeY)
+            {
+            float offsetPositionY = (parallaxCam.posY - transform.position.y) % parallaxCam.itemSizeY;
+            transform.position = new Vector3(transform.position.x, parallaxCam.posY + offsetPositionY, 0);
+            }
+        }                
     }
-    private void ExecuteNoCam()
-    {      
 
+
+
+    private void ExecuteNoCam() //The Parallax Moves on its own depanding on the speed the user chose !Not Related to the Camera
+    {      
+        
         switch (type)
         {
-            case Type.Down:
+            case Direction.Up:
+                {
+                    YParallaxMove();
+                    break;
+                }
+            case Direction.Down:
                 {
                     ParallaxMoveY();
                     break;
                 }
-            case Type.Left:
+            case Direction.Left:
                 {
                     ParallaxMoveX();
+                    break;
+                }
+            case Direction.Right:
+                {
+                    XParallaxMove();
                     break;
                 }
         }
     }
 
-    void ExecuteCam()
-    {
+   
+   
+    #endregion
 
-    }
-
-    private void LateUpdate()
-    {
-        //Vector3 deltaMovement = parallaxCam.camera.position - parallaxCam.lastCamPos;
-        //transform.position += deltaMovement * parallaxCam.parallaxEffectMultiplier;
-        //transform.position = parallaxCam.camera.position;
-    }
 
     private void FixedUpdate()
     {
@@ -180,8 +248,7 @@ public class Parallax : MonoBehaviour
                 {
                     MoveParallax();
                     break;
-                }
-               
+                }               
         }
         
     }
@@ -194,66 +261,78 @@ public class Parallax : MonoBehaviour
     public class ParallaxEditor : Editor
     {
         public SerializedProperty
-            parallaxDropDown, parallaxCam1;
+            parallaxDropDown, parallaxCam1, direction;
 
         private void OnEnable()
         {
             parallaxDropDown = serializedObject.FindProperty("parallaxDropDown");
             parallaxCam1 = serializedObject.FindProperty("parallaxCam");
+            direction = serializedObject.FindProperty("type");
         }
         public override void OnInspectorGUI()
         {
-            base.OnInspectorGUI();
-
-
+            serializedObject.Update();
+           base.OnInspectorGUI();
 
             Parallax parallax = (Parallax)target;
-
-
             ParallaxType parallaxType = (ParallaxType)parallaxDropDown.enumValueIndex;
-
+            
             switch(parallaxType)
             {
                 case ParallaxType.Camera:
                     Camera();
                     break;
-                case ParallaxType.NoCamera:
+                case ParallaxType.NoCamera:                    
                     NoCamera();
                     break;
             }
 
-
+            
             void Camera()
             {
-                EditorGUILayout.BeginVertical();
+                EditorGUILayout.Space();
                 EditorGUI.indentLevel++;
 
-                EditorGUILayout.PropertyField(parallaxCam1);
+                EditorGUILayout.BeginHorizontal();
+                parallax.parallaxCam.parallaxEffectMultiplier = EditorGUILayout.Vector2Field("Effect:", parallax.parallaxCam.parallaxEffectMultiplier);
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.BeginVertical();
+                parallax.parallaxCam.horizontal = EditorGUILayout.Toggle("Horizontal:", parallax.parallaxCam.horizontal);
+                parallax.parallaxCam.vertical = EditorGUILayout.Toggle("vertical:", parallax.parallaxCam.vertical);
                 EditorGUILayout.EndVertical();
 
+                
+
+
             }
+            
             void NoCamera()
-            {
+            {                
                 EditorGUILayout.BeginHorizontal();
                 EditorGUI.indentLevel++;
 
-                parallax.spriteParallax.alternate = EditorGUILayout.Toggle("Alternate: ", parallax.spriteParallax.alternate);
-                EditorGUILayout.EndHorizontal();
+                parallax.type = (Direction)EditorGUILayout.EnumPopup("Direction", parallax.type); //direction of the parallax dropdown
 
+                parallax.spriteParallax.alternate = EditorGUILayout.Toggle("Alternate: ", parallax.spriteParallax.alternate);//alternation toggle
+                EditorGUILayout.EndHorizontal();
+                if(parallax.spriteParallax.alternate == true)
+                {
+                    EditorGUILayout.BeginVertical();
+                    EditorGUILayout.BeginHorizontal();
+                    parallax.spriteParallax.alternation = EditorGUILayout.IntField("Alternations: ", parallax.spriteParallax.alternation);//Int alternations to choose how many alternations there will be
+                    parallax.spriteParallax.alternation = EditorGUILayout.IntSlider(parallax.spriteParallax.alternation, 2, 10); //handy IntSlider for alternations
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.EndVertical();
+                }              
 
                 EditorGUILayout.BeginVertical();
-
-                EditorGUILayout.BeginHorizontal();
-                parallax.spriteParallax.alternation = EditorGUILayout.IntField("Alternations: ", parallax.spriteParallax.alternation);
-                parallax.spriteParallax.alternation = EditorGUILayout.IntSlider(parallax.spriteParallax.alternation, 2, 10);
-                EditorGUILayout.EndHorizontal();
-  
-
-                parallax.spriteParallax.speed = EditorGUILayout.FloatField("Speed: ", parallax.spriteParallax.speed);
-
+                parallax.spriteParallax.speed = EditorGUILayout.FloatField("Speed: ", parallax.spriteParallax.speed);//Speed of the Parallax Effect
                 EditorGUILayout.EndVertical();
-
+ 
             }
+
+           serializedObject.ApplyModifiedProperties();
 
         }
     }
