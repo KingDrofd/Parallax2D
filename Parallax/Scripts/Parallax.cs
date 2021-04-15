@@ -54,10 +54,18 @@ public class Parallax : MonoBehaviour
         Left, Down, Up, Right
     }
 
+    public enum CamWay
+    {
+        Horizontal, Vertical
+    }
+
+
    public ParallaxType parallaxDropDown;
-   [HideInInspector] public Direction type;
-   [HideInInspector] public SpriteParallax spriteParallax;
-   [HideInInspector] public ParallaxCam parallaxCam; 
+
+    [HideInInspector] public CamWay camWay;
+    [HideInInspector] public Direction type;
+    [HideInInspector] public SpriteParallax spriteParallax;
+    [HideInInspector] public ParallaxCam parallaxCam; 
     
 
 
@@ -72,8 +80,7 @@ public class Parallax : MonoBehaviour
         InitNoCamVars();
 
         InitCamVars();
-        //parallaxCam.camera = Camera.main.transform;
-        //parallaxCam.lastCamPos = parallaxCam.camera.position;
+        
 
 
 
@@ -117,7 +124,7 @@ public class Parallax : MonoBehaviour
     
     void InitNoCamVars()
     {
-        Debug.LogWarning("init");
+        
         spriteParallax.spriteRenderer = GetComponent<SpriteRenderer>();
         spriteParallax.startPos = spriteParallax.spriteRenderer.transform.position;
         spriteParallax.itemSize = spriteParallax.spriteRenderer.bounds.size;
@@ -177,28 +184,35 @@ public class Parallax : MonoBehaviour
         }
     }
 
-    void MoveParallax()
+    void MoveParallaxHorizontal()
+    {
+        Vector3 deltaMovement = parallaxCam.camera.position - parallaxCam.lastCamPos;
+        transform.position += new Vector3(deltaMovement.x * parallaxCam.parallaxEffectMultiplier.x, deltaMovement.y * parallaxCam.parallaxEffectMultiplier.y);
+        parallaxCam.lastCamPos = parallaxCam.camera.position;
+        if (parallaxCam.horizontal)
+        {
+            if (Mathf.Abs(parallaxCam.camera.position.x - transform.position.x) >= parallaxCam.itemSizeX)
+            {
+                float offsetPositionX = (parallaxCam.camera.position.x - transform.position.x) % parallaxCam.itemSizeX;
+                transform.position = new Vector3(parallaxCam.camera.position.x + offsetPositionX, transform.position.y, 0);
+            }
+        }
+
+    }
+    void MoveParallaxVertical()
     {
         Vector3 deltaMovement = parallaxCam.camera.position - parallaxCam.lastCamPos;
         transform.position -= new Vector3(deltaMovement.x * parallaxCam.parallaxEffectMultiplier.x, deltaMovement.y * parallaxCam.parallaxEffectMultiplier.y);
-        if(parallaxCam.horizontal)
+        parallaxCam.lastCamPos = parallaxCam.camera.position;
+        if (parallaxCam.vertical)
         {
-            if (Mathf.Abs(parallaxCam.posX - transform.position.x) >= parallaxCam.itemSizeX)
+            if (Mathf.Abs(parallaxCam.camera.position.y - transform.position.y) >= parallaxCam.itemSizeY)
             {
-                float offsetPositionX = (parallaxCam.posX - transform.position.x) % parallaxCam.itemSizeX;
-                transform.position = new Vector3(parallaxCam.posX + offsetPositionX, transform.position.y, 0);
+                float offsetPositionY = (parallaxCam.camera.position.y - transform.position.y) % parallaxCam.itemSizeY;
+                transform.position = new Vector3(transform.position.x, parallaxCam.camera.position.y + offsetPositionY, 0);
             }
         }
-        if(parallaxCam.vertical)
-        {
-            if(Mathf.Abs(parallaxCam.posY - transform.position.y) >= parallaxCam.itemSizeY)
-            {
-            float offsetPositionY = (parallaxCam.posY - transform.position.y) % parallaxCam.itemSizeY;
-            transform.position = new Vector3(transform.position.x, parallaxCam.posY + offsetPositionY, 0);
-            }
-        }                
     }
-
 
 
     private void ExecuteNoCam() //The Parallax Moves on its own depanding on the speed the user chose !Not Related to the Camera
@@ -229,8 +243,24 @@ public class Parallax : MonoBehaviour
         }
     }
 
-   
-   
+    void ExecuteCam()
+    {
+        switch (camWay)
+        {
+            case CamWay.Horizontal:
+                {
+                    MoveParallaxHorizontal();
+                    break;
+                }
+            case CamWay.Vertical:
+                {
+                    MoveParallaxVertical();
+                    break;
+                }
+
+        }
+    }
+
     #endregion
 
 
@@ -246,7 +276,8 @@ public class Parallax : MonoBehaviour
                 
             case ParallaxType.Camera:
                 {
-                    MoveParallax();
+                    ExecuteCam();
+                    
                     break;
                 }               
         }
