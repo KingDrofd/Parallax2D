@@ -4,7 +4,7 @@ using UnityEditor;
 #endif
 public class Parallax : MonoBehaviour
 {
-    
+    //Class used for the independent parallax
     [System.Serializable]
     public class SpriteParallax
     {
@@ -13,7 +13,7 @@ public class Parallax : MonoBehaviour
        [HideInInspector] public Vector3 itemSize;
        [HideInInspector] public float speed;        
        [HideInInspector] public SpriteRenderer spriteRenderer;
-        #region       alternations
+        
 
         
         public bool alternate = false;
@@ -22,11 +22,12 @@ public class Parallax : MonoBehaviour
                                 //sprite must end with what it started,
                                 //example "1 0 1" going from 1 to 1 is better visually than going from 0 to 1
                                 //in case of 4 alternation it would be, "1 0 1 0 1" and "1 1 0 1" works too, it's all 
-        #endregion 
+        
     }
 
 
-    
+
+    //Class used for the parallax Cam
     [System.Serializable]
     public class ParallaxCam
     {
@@ -46,8 +47,7 @@ public class Parallax : MonoBehaviour
     public enum ParallaxType
     {
         Camera, NoCamera
-    }
-    
+    }    
     
     public enum Direction
     {
@@ -60,10 +60,14 @@ public class Parallax : MonoBehaviour
     }
 
 
-   public ParallaxType parallaxDropDown;
+   public ParallaxType parallaxType;
 
+
+    //Vars used for dropdowns
     [HideInInspector] public CamWay camWay;
     [HideInInspector] public Direction type;
+    
+    //Classes declaration
     [HideInInspector] public SpriteParallax spriteParallax;
     [HideInInspector] public ParallaxCam parallaxCam; 
     
@@ -73,17 +77,11 @@ public class Parallax : MonoBehaviour
 
     private void Start()
     {
-
-
         CheckChildren();
         
         InitNoCamVars();
 
-        InitCamVars();
-        
-
-
-
+        InitCamVars();       
     }
 
     #region ErrorsChecking
@@ -110,7 +108,7 @@ public class Parallax : MonoBehaviour
 
 
 
-    void InitCamVars()
+    void InitCamVars()//initialize varibles in start method
     {
         parallaxCam.camera = Camera.main.transform;
         parallaxCam.lastCamPos = parallaxCam.camera.position;
@@ -122,7 +120,7 @@ public class Parallax : MonoBehaviour
         parallaxCam.posY = parallaxCam.camera.position.y;
     }
     
-    void InitNoCamVars()
+    void InitNoCamVars()//initialize varibles in start method
     {
         
         spriteParallax.spriteRenderer = GetComponent<SpriteRenderer>();
@@ -158,7 +156,7 @@ public class Parallax : MonoBehaviour
             transform.position = spriteParallax.startPos + Vector3.right * newPos;
         }
     }
-    private void ParallaxMoveY()//Move the parallax Down
+    private void ParallaxMoveY() //Move the parallax Down
     {       
         if (spriteParallax.alternate == true)
         {
@@ -184,7 +182,7 @@ public class Parallax : MonoBehaviour
         }
     }
 
-    void MoveParallaxHorizontal()
+    void MoveParallaxHorizontal()//Move the Parallax horizontally both Left and right(Following the player)(code by CodeMonkey)
     {
         Vector3 deltaMovement = parallaxCam.camera.position - parallaxCam.lastCamPos;
         transform.position += new Vector3(deltaMovement.x * parallaxCam.parallaxEffectMultiplier.x, deltaMovement.y * parallaxCam.parallaxEffectMultiplier.y);
@@ -199,7 +197,7 @@ public class Parallax : MonoBehaviour
         }
 
     }
-    void MoveParallaxVertical()
+    void MoveParallaxVertical() //Move the Parallax Vertically both Left and right(Following the player)(code by CodeMonkey)
     {
         Vector3 deltaMovement = parallaxCam.camera.position - parallaxCam.lastCamPos;
         transform.position -= new Vector3(deltaMovement.x * parallaxCam.parallaxEffectMultiplier.x, deltaMovement.y * parallaxCam.parallaxEffectMultiplier.y);
@@ -243,7 +241,7 @@ public class Parallax : MonoBehaviour
         }
     }
 
-    void ExecuteCam()
+    void ExecuteCam() //The Parallax Moves with the camera position (Camera must have "Main Camera" tag)
     {
         switch (camWay)
         {
@@ -266,7 +264,7 @@ public class Parallax : MonoBehaviour
 
     private void FixedUpdate()
     {
-        switch(parallaxDropDown)
+        switch(parallaxType)
         {
             case ParallaxType.NoCamera:
                 {
@@ -284,7 +282,6 @@ public class Parallax : MonoBehaviour
         
     }
 
-
     #region ParallaxEditor
 #if UNITY_EDITOR
 
@@ -296,7 +293,7 @@ public class Parallax : MonoBehaviour
 
         private void OnEnable()
         {
-            parallaxDropDown = serializedObject.FindProperty("parallaxDropDown");
+            parallaxDropDown = serializedObject.FindProperty("parallaxType");
             parallaxCam1 = serializedObject.FindProperty("parallaxCam");
             direction = serializedObject.FindProperty("type");
         }
@@ -339,7 +336,8 @@ public class Parallax : MonoBehaviour
             }
             
             void NoCamera()
-            {                
+            {
+                EditorGUILayout.Space();
                 EditorGUILayout.BeginHorizontal();
                 EditorGUI.indentLevel++;
 
@@ -349,12 +347,12 @@ public class Parallax : MonoBehaviour
                 EditorGUILayout.EndHorizontal();
                 if(parallax.spriteParallax.alternate == true)
                 {
-                    EditorGUILayout.BeginVertical();
+                    
                     EditorGUILayout.BeginHorizontal();
                     parallax.spriteParallax.alternation = EditorGUILayout.IntField("Alternations: ", parallax.spriteParallax.alternation);//Int alternations to choose how many alternations there will be
                     parallax.spriteParallax.alternation = EditorGUILayout.IntSlider(parallax.spriteParallax.alternation, 2, 10); //handy IntSlider for alternations
                     EditorGUILayout.EndHorizontal();
-                    EditorGUILayout.EndVertical();
+                    
                 }              
 
                 EditorGUILayout.BeginVertical();
